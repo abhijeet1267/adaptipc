@@ -25,6 +25,10 @@ SRC="src/shm_ringbuffer.c src/uds_fallback.c src/adapt_ipc.c src/cost_model.c sr
 TESTS="adapt_ipc shm_ringbuffer flowcontrol lazy_negotiation backpressure_latency cost_model policy_modes decision_log_consistency route_transition_accounting queue_occupancy_instrumentation"
 RUN=""
 STEP=0; STEPS=1
+# Presentation flags (set from trailing -quiet / -show-results).
+# Default: show the results summary. QUIET=1 suppresses it (for CI).
+QUIET=0
+SHOW_RESULTS=1
 
 banner() {
     echo "=============================================="
@@ -181,7 +185,16 @@ common_prep() {
 
 analyze() { python3 scripts/lab_analyze.py "$RUN" >> "$RUN/stdout.log" 2>&1; }
 
-# ------------------------------------------------------------- actions ----
+# Print a scientific summary of a finished run by parsing that run's
+# own raw result files (scripts/lab_results.py). Honors QUIET.
+# show_summary <run_dir> <experiment>
+show_summary() {
+    local rundir="$1" exp="$2"
+    if [ "$QUIET" -eq 1 ]; then return 0; fi
+    echo ""
+    python3 scripts/lab_results.py "$rundir" "$exp"
+}
+
 run_all() {
     banner
     new_run "full"
@@ -280,27 +293,39 @@ menu() {
             1)  new_run correctness; write_metadata correctness cli
                 do_build && exp_correctness && echo "  all tests passed" \
                     || echo "  FAILED (see $RUN)"
-                finish_run >/dev/null; echo "  Run: $RUN"; read -r x ;;
+                finish_run >/dev/null
+                show_summary "$RUN" correctness
+                echo "  Run: $RUN"; read -r x ;;
             2)  new_run transport; write_metadata transport cli
                 do_build && exp_transport && analyze \
                     && echo "  done: $RUN" || echo "  FAILED"
-                finish_run >/dev/null; read -r x ;;
+                finish_run >/dev/null
+                show_summary "$RUN" transport
+                read -r x ;;
             3)  new_run adaptive; write_metadata adaptive cli
                 do_build && exp_adaptive && analyze \
                     && echo "  done: $RUN" || echo "  FAILED"
-                finish_run >/dev/null; read -r x ;;
+                finish_run >/dev/null
+                show_summary "$RUN" adaptive
+                read -r x ;;
             4)  new_run hysteresis; write_metadata hysteresis cli
                 do_build && exp_hysteresis && analyze \
                     && echo "  done: $RUN" || echo "  FAILED"
-                finish_run >/dev/null; read -r x ;;
+                finish_run >/dev/null
+                show_summary "$RUN" hysteresis
+                read -r x ;;
             5)  new_run ewma; write_metadata ewma cli
                 do_build && exp_ewma && analyze \
                     && echo "  done: $RUN" || echo "  FAILED"
-                finish_run >/dev/null; read -r x ;;
+                finish_run >/dev/null
+                show_summary "$RUN" ewma
+                read -r x ;;
             6)  new_run latency; write_metadata latency cli
                 do_build && exp_latency && analyze \
                     && echo "  done: $RUN" || echo "  FAILED"
-                finish_run >/dev/null; read -r x ;;
+                finish_run >/dev/null
+                show_summary "$RUN" latency
+                read -r x ;;
             7)  run_all; read -r x ;;
             8|9|10) local r; r=$(cat "$RUNS_ROOT/LATEST" 2>/dev/null || true)
                 [ -z "$r" ] && { echo "  no runs yet"; sleep 2; continue; }
@@ -317,6 +342,22 @@ tables_cmd() { graphs_cmd "$@"; }
 report_cmd() { graphs_cmd "$@"; }
 
 # --------------------------------------------------------------- main -----
+# Scan "$@" for display flags first (must run in the current shell so
+# QUIET persists), then strip them from the positional arguments.
+for _a in "$@"; do
+    case "$_a" in
+        -quiet|--quiet) QUIET=1 ;;
+        -show-results|--show-results) QUIET=0 ;;
+    esac
+done
+_FILTERED=""
+for _a in "$@"; do
+    case "$_a" in
+        -quiet|--quiet|-show-results|--show-results) ;;
+        *) _FILTERED="$_FILTERED $_a" ;;
+    esac
+done
+set -- $_FILTERED
 case "${1:---menu}" in
     -h|--help|help)
         sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
@@ -332,18 +373,30 @@ case "${1:---menu}" in
         case "$exp" in
             correctness) new_run correctness; write_metadata correctness cli
                 do_build || { echo "build failed"; exit 1; }
-                if exp_correctness; then echo "ALL TESTS PASSED"; exit 0
-                else echo "TESTS FAILED"; exit 1; fi ;;
+                if exp_correctness; then echo "ALL TESTS PASSED"
+                else echo "TESTS FAILED"; exit 1; fi
+                show_summary "$RUN" correctness || exit 3
+                exit 0 ;;
             transport) new_run transport; write_metadata transport cli
-                do_build && exp_transport && analyze && echo "OK: $RUN" || exit 1 ;;
+                do_build && exp_transport && analyze || exit 1
+                echo "OK: $RUN"
+                show_summary "$RUN" transport || exit 3 ;;
             adaptive) new_run adaptive; write_metadata adaptive cli
-                do_build && exp_adaptive && analyze && echo "OK: $RUN" || exit 1 ;;
+                do_build && exp_adaptive && analyze || exit 1
+                echo "OK: $RUN"
+                show_summary "$RUN" adaptive || exit 3 ;;
             hysteresis) new_run hysteresis; write_metadata hysteresis cli
-                do_build && exp_hysteresis && analyze && echo "OK: $RUN" || exit 1 ;;
+                do_build && exp_hysteresis && analyze || exit 1
+                echo "OK: $RUN"
+                show_summary "$RUN" hysteresis || exit 3 ;;
             ewma) new_run ewma; write_metadata ewma cli
-                do_build && exp_ewma && analyze && echo "OK: $RUN" || exit 1 ;;
+                do_build && exp_ewma && analyze || exit 1
+                echo "OK: $RUN"
+                show_summary "$RUN" ewma || exit 3 ;;
             latency) new_run latency; write_metadata latency cli
-                do_build && exp_latency && analyze && echo "OK: $RUN" || exit 1 ;;
+                do_build && exp_latency && analyze || exit 1
+                echo "OK: $RUN"
+                show_summary "$RUN" latency || exit 3 ;;
             all) run_all ;;
             *) echo "unknown experiment: $exp"; exit 2 ;;
         esac ;;

@@ -1,9 +1,9 @@
 # AdaptIPC — Full Engineering Handoff Document
 
 **For:** any AI/engineer taking over the project (e.g., for the paper-revision task)
-**Repository:** https://github.com/miskinabhijeet2025-ai/adaptipc
+**Repository:** https://github.com/abhijeet1267/adaptipc
 **State at handoff:** branch `main`, commit `ebc3bae`, working tree clean, everything pushed.
-**Live website:** https://miskinabhijeet2025-ai.github.io/adaptipc/ (verified working)
+**Live website:** https://abhijeet1267.github.io/adaptipc/ (verified working)
 **Local website:** `./scripts/start_website.sh` → http://localhost:8123/index.html
 **Baseline tag:** `baseline-v1-size-only` (the original validated paper implementation)
 
@@ -261,7 +261,7 @@ python3 scripts/export_web_data.py
   the dramatic size_only-vs-hysteresis contrast lives in
   `experiments/v2_1/raw/adversarial_delta.csv` instead: 39,796 vs 8
   switches over 200k messages).
-- Live website: https://miskinabhijeet2025-ai.github.io/adaptipc/
+- Live website: https://abhijeet1267.github.io/adaptipc/
   (Pages enabled, workflow green, 13/13 resources 200).
 
 ## 8. THINGS AN AI TAKING OVER MUST NOT DO

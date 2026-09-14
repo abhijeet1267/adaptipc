@@ -6,11 +6,11 @@
 
 *One API. The right transport for every message.*
 
-[🌐 Interactive Website](https://miskinabhijeet2025-ai.github.io/adaptipc/) ·
-[🚀 Live Demo](https://miskinabhijeet2025-ai.github.io/adaptipc/demo.html) ·
+[🌐 Interactive Website](https://abhijeet1267.github.io/adaptipc/) ·
+[🚀 Live Demo](https://abhijeet1267.github.io/adaptipc/demo.html) ·
 [📊 Experiments](experiments/README.md) ·
 [📄 Paper](paper/Dynamic_IPC_Routing.pdf) ·
-[💻 Source](https://github.com/miskinabhijeet2025-ai/adaptipc)
+[💻 Source](https://github.com/abhijeet1267/adaptipc)
 
 <img src="assets/before_vs_adaptive.png" alt="Static IPC vs AdaptIPC" width="720">
 
